@@ -23,7 +23,11 @@ const ensureDBConnection = async (req, res, next) => {
       isConnected = true;
     } catch (error) {
       console.error('Database connection error:', error);
-      return res.status(500).json({ error: 'Database connection failed' });
+      return res.status(500).json({ 
+        success: false,
+        error: 'Database connection failed',
+        message: error.message 
+      });
     }
   }
   next();
@@ -37,19 +41,30 @@ const ensureCloudinaryConnection = async (req, res, next) => {
       isCloudinaryConnected = true;
     } catch (error) {
       console.error('Cloudinary connection error:', error);
-      return res.status(500).json({ error: 'Cloudinary connection failed' });
+      return res.status(500).json({ 
+        success: false,
+        error: 'Cloudinary connection failed',
+        message: error.message 
+      });
     }
   }
   next();
 };
 
-app.use(express.json());
+// Basic middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cors({
   credentials: true,
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'token']
 }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Apply connection middleware to all routes
 app.use(ensureDBConnection);
@@ -62,17 +77,46 @@ app.use('/api/cart', cartRouter);
 app.use('/api/order', orderRouter);
 
 app.get('/', (req, res) => {
-  res.send("API Working");
+  res.json({
+    status: 'ok',
+    message: 'API is working',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
 
 // Export the handler for Vercel
-export default serverless(app);
+const handler = serverless(app);
+
+export default async (req, res) => {
+  // Add timeout handling
+  const timeout = setTimeout(() => {
+    res.status(504).json({
+      success: false,
+      message: 'Request timeout - server took too long to respond'
+    });
+  }, 8000); // 8 second timeout
+
+  try {
+    const result = await handler(req, res);
+    clearTimeout(timeout);
+    return result;
+  } catch (error) {
+    clearTimeout(timeout);
+    console.error('Serverless handler error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

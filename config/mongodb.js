@@ -1,45 +1,46 @@
 import mongoose from "mongoose";
 
+const MONGODB_URI = process.env.MONGODB_URL;
+
+if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URL environment variable');
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
     try {
-        // Check if we already have a connection
-        if (mongoose.connection.readyState === 1) {
-            console.log("Using existing database connection");
-            return;
+        if (cached.conn) {
+            console.log("Using cached database connection");
+            return cached.conn;
         }
 
-        // Configure mongoose options
-        const options = {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            maxPoolSize: 10,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
-        };
+        if (!cached.promise) {
+            const opts = {
+                bufferCommands: false,
+                maxPoolSize: 5,
+                minPoolSize: 1,
+                serverSelectionTimeoutMS: 3000,
+                socketTimeoutMS: 30000,
+                connectTimeoutMS: 3000,
+            };
 
-        // Connect to MongoDB
-        await mongoose.connect(process.env.MONGODB_URL, options);
+            cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+                console.log("MongoDB Connected Successfully");
+                return mongoose;
+            });
+        }
 
-        mongoose.connection.on('connected', () => {
-            console.log("MongoDB Connected Successfully");
-        });
-
-        mongoose.connection.on('error', (err) => {
-            console.error("MongoDB connection error:", err);
-        });
-
-        mongoose.connection.on('disconnected', () => {
-            console.log("MongoDB disconnected");
-        });
-
-        // Handle process termination
-        process.on('SIGINT', async () => {
-            await mongoose.connection.close();
-            process.exit(0);
-        });
+        cached.conn = await cached.promise;
+        return cached.conn;
 
     } catch (error) {
         console.error("MongoDB connection error:", error);
+        cached.promise = null;
         throw error;
     }
 };
