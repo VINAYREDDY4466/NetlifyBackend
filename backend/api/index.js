@@ -54,4 +54,4 @@ app.use((err, req, res, next) => {
 })
 
 // 🔁 Replace `app.listen` with this:
-export const handler = serverless(app)
+export default serverless(app);
