@@ -93,14 +93,22 @@ const adminLogin = async (req, res) => {
 // Store OTPs temporarily
 const otpStore = {}
 
-// Send OTP for email verification
-const sendOtp = async (req, res) => {
+// Send OTP for registration
+const sendRegisterOtp = async (req, res) => {
     try {
         const { email } = req.body;
+        
+        // Check if user already exists
+        const exists = await userModel.findOne({ email });
+        if (exists) {
+            return res.json({ success: false, message: "User already exists. Please login." });
+        }
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         otpStore[email] = {
             otp,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            type: 'register'
         };
 
         const transporter = nodemailer.createTransport({
@@ -108,16 +116,68 @@ const sendOtp = async (req, res) => {
             port: 587,
             secure: false,
             auth: {
-                user: 'vinayvrd9@gmail.com', // Your Gmail address
-                pass: 'xvaa nuac jcis rzlj'  // Your Gmail app password
+                user: 'vinayvrd9@gmail.com',
+                pass: 'xvaa nuac jcis rzlj'
             }
         });
 
         const mailOptions = {
-            from: 'vinayvrd9@gmail.com', // Your Gmail address
+            from: 'vinayvrd9@gmail.com',
             to: email,
-            subject: "OTP for your Treenza Store authentication",
-            text: `To authenticate, please use the following One Time Password (OTP):
+            subject: "Email Verification OTP",
+            text: `To verify your email, please use the following One Time Password (OTP):
+
+${otp}
+
+This OTP will be valid for 15 minutes.
+
+Do not share this OTP with anyone. If you didn't make this request, you can safely ignore this email.
+Treenza will never contact you about this email or ask for any login codes or links. Beware of phishing scams.
+
+Thanks for visiting Treenza!`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'OTP sent successfully' });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: 'Failed to send OTP' });
+    }
+}
+
+// Send OTP for password reset
+const sendPasswordOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        // Check if user exists
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.json({ success: false, message: "User doesn't exist. Please register first." });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpStore[email] = {
+            otp,
+            timestamp: Date.now(),
+            type: 'password'
+        };
+
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+                user: 'vinayvrd9@gmail.com',
+                pass: 'xvaa nuac jcis rzlj'
+            }
+        });
+
+        const mailOptions = {
+            from: 'vinayvrd9@gmail.com',
+            to: email,
+            subject: "Password Reset OTP",
+            text: `To reset your password, please use the following One Time Password (OTP):
 
 ${otp}
 
@@ -140,7 +200,7 @@ Thanks for visiting Treenza!`
 // Verify OTP
 const verifyOtp = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, type } = req.body;
         const storedData = otpStore[email];
 
         if (!storedData) {
@@ -153,14 +213,21 @@ const verifyOtp = async (req, res) => {
             return res.json({ success: false, message: 'OTP expired' });
         }
 
+        // Check if OTP type matches
+        if (storedData.type !== type) {
+            return res.json({ success: false, message: 'Invalid OTP type' });
+        }
+
         if (storedData.otp === otp) {
             delete otpStore[email];
             
-            // Update user verification status if user exists
-            const user = await userModel.findOne({ email });
-            if (user) {
-                user.isVerified = true;
-                await user.save();
+            // Update user verification status if it's a registration OTP
+            if (type === 'register') {
+                const user = await userModel.findOne({ email });
+                if (user) {
+                    user.isVerified = true;
+                    await user.save();
+                }
             }
             
             return res.json({ success: true, message: 'OTP verified successfully' });
@@ -176,8 +243,27 @@ const verifyOtp = async (req, res) => {
 // Resend OTP
 const resendOtp = async (req, res) => {
     try {
-        const { email } = req.body;
-        await sendOtp(req, res);
+        const { email, type } = req.body;
+        
+        // Validate user existence based on type
+        if (type === 'password') {
+            const user = await userModel.findOne({ email });
+            if (!user) {
+                return res.json({ success: false, message: "User doesn't exist. Please register first." });
+            }
+        } else if (type === 'register') {
+            const exists = await userModel.findOne({ email });
+            if (exists) {
+                return res.json({ success: false, message: "User already exists. Please login." });
+            }
+        }
+
+        // Call the appropriate send OTP function
+        if (type === 'password') {
+            await sendPasswordOtp(req, res);
+        } else {
+            await sendRegisterOtp(req, res);
+        }
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
@@ -219,7 +305,8 @@ export {
     loginUser, 
     registerUser, 
     adminLogin, 
-    sendOtp, 
+    sendRegisterOtp,
+    sendPasswordOtp,
     verifyOtp, 
     resendOtp,
     forgotPassword 
