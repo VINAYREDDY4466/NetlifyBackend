@@ -176,18 +176,23 @@ const sendPasswordOtp = async (req, res) => {
         const mailOptions = {
             from: 'vinayvrd9@gmail.com',
             to: email,
-            subject: "Password Reset OTP",
-            text: `To reset your password, please use the following One Time Password (OTP):
-
-${otp}
-
-This OTP will be valid for 15 minutes.
-
-Do not share this OTP with anyone. If you didn't make this request, you can safely ignore this email.
-Treenza will never contact you about this email or ask for any login codes or links. Beware of phishing scams.
-
-Thanks for visiting Treenza!`
-        };
+            subject: "Email Verification OTP",
+            html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Email Verification OTP</h2>
+                <p>To verify your email, please use the following One Time Password (OTP):</p>
+                <h1 style="color: #333;">${otp}</h1>
+                <p>This OTP will be valid for <b>15 minutes</b>.</p>
+                <p style="color: red;">Do not share this OTP with anyone.</p>
+                <p>If you didn't make this request, you can safely ignore this email.</p>
+                <p style="font-size: 12px; color: gray;">Treenza will never contact you about this email or ask for any login codes or links. Beware of phishing scams.</p>
+                <hr />
+                <p>Thanks for visiting <b>Treenza</b>!</p>
+                <img src="https://res.cloudinary.com/dihcgra0j/image/upload/v1748238140/Screenshot_2025-05-26_111053_gw7gtl.png" alt="Treenza Logo" style="width: 300px;"/>
+              </div>
+            `
+          };
+          
 
         await transporter.sendMail(mailOptions);
         res.json({ success: true, message: 'OTP sent successfully' });

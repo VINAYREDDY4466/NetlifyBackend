@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     isVerified: { type: Boolean, default: false },
     cartData: { type: Object, default: {} }
-}, { minimize: false })
+}, {timestamps:true});
 
 const userModel = mongoose.models.user || mongoose.model('user', userSchema);
 

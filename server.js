@@ -17,10 +17,11 @@ connectCloudinary()
 // middlewares
 app.use(express.json())
 
-// CORS configuration - more permissive for debugging
+
+
 app.use(cors({
     credentials: true,
-    origin: true, // Allow all origins temporarily for debugging
+    origin:["http://localhost:5173","https://final-ecommerce-tan.vercel.app/"], // Allow all origins temporarily for debugging
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'token']
 }))
