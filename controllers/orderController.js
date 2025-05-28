@@ -231,4 +231,23 @@ const updateStatus = async (req,res) => {
     }
 }
 
+export const getUserOrderCount = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        
+        const orderCount = await orderModel.countDocuments({ userId });
+        
+        res.json({ 
+            success: true, 
+            orderCount 
+        });
+    } catch (error) {
+        console.error('Error getting order count:', error);
+        res.json({ 
+            success: false, 
+            message: 'Error getting order count' 
+        });
+    }
+}
+
 export {verifyRazorpay, verifyStripe ,placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus}
