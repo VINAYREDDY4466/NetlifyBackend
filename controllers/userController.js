@@ -116,13 +116,13 @@ const sendRegisterOtp = async (req, res) => {
             port: 587,
             secure: false,
             auth: {
-                user: 'vinayvrd9@gmail.com',
-                pass: 'xvaa nuac jcis rzlj'
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
             }
         });
 
         const mailOptions = {
-            from: 'vinayvrd9@gmail.com',
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: "Email Verification OTP",
             text: `To verify your email, please use the following One Time Password (OTP):
@@ -168,13 +168,13 @@ const sendPasswordOtp = async (req, res) => {
             port: 587,
             secure: false,
             auth: {
-                user: 'vinayvrd9@gmail.com',
-                pass: 'xvaa nuac jcis rzlj'
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD
             }
         });
 
         const mailOptions = {
-            from: 'vinayvrd9@gmail.com',
+            from: process.env.EMAIL_FROM,
             to: email,
             subject: "Email Verification OTP",
             html: `
