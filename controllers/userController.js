@@ -188,7 +188,7 @@ const sendPasswordOtp = async (req, res) => {
                 <p style="font-size: 12px; color: gray;">Treenza will never contact you about this email or ask for any login codes or links. Beware of phishing scams.</p>
                 <hr />
                 <p>Thanks for visiting <b>Treenza</b>!</p>
-                <img src="https://res.cloudinary.com/dihcgra0j/image/upload/v1748238140/Screenshot_2025-05-26_111053_gw7gtl.png" alt="Treenza Logo" style="width: 300px;"/>
+                <img src="https://res.cloudinary.com/dihcgra0j/image/upload/v1748942853/Screenshot_2025-05-26_111053_sjj7vz.png" alt="Treenza Logo" style="width: 300px;"/>
               </div>
             `
           };
