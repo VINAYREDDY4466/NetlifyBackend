@@ -85,5 +85,21 @@ const singleProduct = async (req, res) => {
         res.json({ success: false, message: error.message })
     }
 }
+// ... existing code ...
 
-export { listProducts, addProduct, removeProduct, singleProduct }
+const updateSize = async (req, res) => {
+    try {
+      const { productId, sizes } = req.body;
+      const product = await productModel.findByIdAndUpdate(
+        productId,
+        { sizes },
+        { new: true }
+      );
+      res.json({ success: true, product });
+    } catch (error) {
+      res.json({ success: false, message: error.message });
+    }
+  };
+  
+  // ... existing code ...
+export { listProducts, addProduct, removeProduct, singleProduct, updateSize }
